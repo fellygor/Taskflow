@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand Colors from your Signup Gradient */
+  --color-primary: #3b82f6;       /* blue-500 */
+  --color-primary-dark: #4f46e5;  /* indigo-600 */
+  
+  /* Light Mode (Matches your Signup's Right Side) */
+  --color-lightbg: #f3f4f6;       /* gray-100 */
+  --color-surface: #ffffff;       /* bg-white */
+  --color-text-main: #1f2937;     /* gray-800 */
+  --color-text-muted: #6b7280;    /* gray-500 */
+  --color-border-light: #e5e7eb;  /* gray-200 */
+
+  /* Dark Mode (Matches your Signup's dark:bg classes) */
+  --color-darkbg: #111827;        /* gray-900 */
+  --color-dark-surface: #1f2937;  /* gray-800 */
+}
+
+body {
+  @apply bg-lightbg text-text-main transition-colors duration-300;
+}
+
+.dark body {
+  @apply bg-darkbg text-gray-100;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
