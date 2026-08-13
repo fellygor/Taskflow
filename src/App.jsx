@@ -5,13 +5,23 @@ import Signup from './pages/SignupPage';
 import Login from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Splash from './pages/SplashScreen';
+import AuthScreen from './pages/AuthScreen';
 
 function App() {
 
   return (
     <Router>
       <Routes>
-        <Route path='/' element={<Splash />} />
+        <Route path='/auth' element={<AuthScreen />} />
+        <Route 
+          path='/dashboard' 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        {/* <Route path='/' element={<Splash />} />
         <Route path='/signup' element={<Signup />} />
         <Route path='/login' element={<Login />} />
          <Route 
@@ -21,7 +31,7 @@ function App() {
               <Dashboard />
             </ProtectedRoute>
           } 
-        />
+        /> */}
       </Routes>
     </Router>
   )

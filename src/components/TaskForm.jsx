@@ -1,26 +1,20 @@
 import { useState, useEffect } from "react";
-import InputField from "../components/InputField";
-import Button from "../components/Button";
-import { useToast } from '../context/ToastContext'
+import { useToast } from "../context/ToastContext";
+
+const EMPTY_TASK = {
+  title: "",
+  description: "",
+  status: "pending",
+  priority: "medium",
+  dueDate: "",
+  category: "",
+};
 
 export default function TaskForm({ onAdd, onSubmit, initialData }) {
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-  }); 
-  const { showToast } = useToast(); 
+  const [isLoading, setIsLoading] = useState(false);
+  const { showToast } = useToast();
 
-  const [task, setTask] = useState(
-    initialData || {
-      title: "",
-      description: "",
-      status: "pending",
-      priority: "medium",
-      dueDate: "",
-      category: ""
-    }
-  );
+  const [task, setTask] = useState(initialData || EMPTY_TASK);
 
   useEffect(() => {
     if (initialData) {
@@ -28,146 +22,125 @@ export default function TaskForm({ onAdd, onSubmit, initialData }) {
     }
   }, [initialData]);
 
-  const handleChange = (e) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!task.title.trim()) {
       showToast("Title is required", "error");
       return;
     }
-    if (task.dueDate && new Date(task.dueDate) < new Date()) {
-      showToast("Due date cannot be in the past ", "error") ;
+
+      if (task.dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(task.dueDate);
+        due.setHours(0, 0, 0, 0);
+        
+        if (due < today) {
+          showToast("Due date cannot be in the past", "error");
+          return;
+        }
     }
 
-    setLoading(true);
+    setIsLoading(true);
 
     try {
       if (initialData && onSubmit) {
         await onSubmit({ ...task, id: initialData.id });
-
-        showToast("Task updated successfully","success");
-
+        showToast("Task updated successfully", "success");
       } else if (onAdd) {
         await onAdd(task);
-
-        showToast("Task added successfully ","success");
+        showToast("Task added successfully", "success");
       }
 
       if (!initialData) {
-        setTask({
-          title: "",
-          description: "",
-          status: "pending",
-          priority: "medium",
-          dueDate: "",
-          category: ""
-        });
+        setTask(EMPTY_TASK);
       }
-
-    } catch (error) {
+    } 
+    catch (error) {
       console.error(error);
-
       showToast("Something went wrong", "error");
-    } finally {
-      setLoading(false);
+    } 
+    finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          onClose={() => setToast({ show: false, message: "" })}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <label className="block">
+        <span className="text-xs font-medium" style={{ color: "var(--ink-muted)" }}>Task Title</span>
+        <input
+          name="title"
+          placeholder="Eg. Redesign a website"
+          value={task.title}
+          onChange={(e) => setTask({ ...task, title: e.target.value })}
+          className="mt-1 w-full text-sm rounded-md px-3 py-2 outline-none bg-transparent"
+          style={{ color: "var(--ink)", border: "1px solid var(--border)" }}
+          required
         />
-      )}
-      
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <InputField 
-            name="title"
-            label="TASK TITLE"
-            placeholder="e.g., Redesign Dashboard"
-            value={task.title}
-            onChange={handleChange}
-            required
+      </label>
+
+      <label className="block">
+        <span className="text-xs font-medium" style={{ color: "var(--ink-muted)" }}>Description</span>
+        <textarea
+          name="description"
+          placeholder="What needs to be done?"
+          value={task.description}
+          onChange={(e) => setTask({ ...task, description: e.target.value })}
+          className="mt-1 w-full text-sm outline-none resize-none rounded-md p-3"
+          style={{ color: "var(--ink)", background: "var(--canvas)", minHeight: 90, border: "1px solid var(--border)"  }}
+        />
+      </label>
+
+      <div className="grid grid-cols-2 gap-4">
+        <label className="block">
+          <span className="text-xs font-medium" style={{ color: "var(--ink-muted)" }}>Priority</span>
+          <select
+            name="priority"
+            value={task.priority}
+            onChange={(e) => setTask({ ...task, priority: e.target.value })}
+            className="mt-1 w-full rounded-md px-2 py-2 text-sm outline-none"
+            style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-medium" style={{ color: "var(--ink-muted)" }}>Due Date</span>
+          <input
+            type="date"
+            value={task.dueDate}
+            onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
+            className="mt-1 w-full text-sm rounded-md px-2 py-2 outline-none bg-transparent"
+            style={{ color: "var(--ink)", border: "1px solid var(--border)" }}
           />
-
-          <div className="flex flex-col">
-            <label className="font-poppins font-semibold text-xs pb-1 text-black dark:text-gray-300">
-              DESCRIPTION
-            </label>
-            <textarea
-              name="description"
-              placeholder="What needs to be done?"
-              value={task.description}
-              onChange={handleChange}
-              className="
-                w-full min-h-[100px] p-3 rounded-xl 
-                border border-gray-300 dark:border-gray-600 
-                bg-white dark:bg-gray-800 
-                text-gray-800 dark:text-white 
-                placeholder-gray-400 
-                focus:ring-2 focus:ring-blue-500 
-                focus:border-blue-500 
-                outline-none transition-all
-              "
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="font-poppins font-semibold text-xs pb-1 text-black dark:text-gray-300 uppercase">
-                Priority
-              </label>
-              <select
-                name="priority"
-                value={task.priority}
-                onChange={handleChange}
-                className="w-full h-[42px] px-3 rounded-xl 
-                  border border-gray-300 dark:border-gray-600 
-                  bg-white dark:bg-gray-800 
-                  text-gray-800 dark:text-white 
-                  focus:ring-2 focus:ring-blue-500 
-                  outline-none transition-all"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            
-            <InputField 
-              name="dueDate"
-              label="DUE DATE"
-              type="date"
-              value={task.dueDate}
-              onChange={handleChange}
-            />
-          </div>
-
-          <InputField 
-            name="category"
-            label="CATEGORY"
-            placeholder="e.g., Work, Personal"
-            value={task.category}
-            onChange={handleChange}
-          />
-
-          <div className="pt-2">
-            <Button
-              text={initialData ? "Update Task" : "Create Task"}
-              type="submit" 
-              isLoading={loading}
-              disabled={loading} 
-            />
-          </div>
-        </form>
+        </label>
       </div>
-    </>
+
+      <label className="block">
+        <span className="text-xs font-medium" style={{ color: "var(--ink-muted)" }}>Category</span>
+        <input
+          type="text"
+          placeholder="e.g. Backend, Design"
+          value={task.category}
+          onChange={(e) => setTask({ ...task, category: e.target.value })}
+          className="mt-1 w-full text-sm rounded-md px-3 py-2 outline-none bg-transparent"
+          style={{ color: "var(--ink)", border: "1px solid var(--border)" }}
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full rounded-md py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+        style={{ background: "var(--teal)" }}
+      >
+        {isLoading ? "Saving…" : initialData ? "Update Task" : "Create Task"}
+      </button>
+    </form>
   );
 }

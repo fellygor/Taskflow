@@ -1,3 +1,9 @@
+const ACCENT = {
+  "Total Tasks": "var(--ink)",
+  "Completed": "var(--teal)",
+  "Pending": "var(--amber)",
+};
+
 export default function Stats({ tasks = [] }) {
   const total = tasks.length;
 
@@ -17,13 +23,21 @@ export default function Stats({ tasks = [] }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {stats.map((item, index) => (
+      {stats.map((item) => (
         <div
-          key={index}
-          className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow"
+          key={item.title}
+          className="p-5 rounded-xl"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
-          <h4 className="text-sm text-gray-500">{item.title}</h4>
-          <p className="text-2xl font-bold">{item.value}</p>
+          <h4
+            className="tf-mono text-[10px] font-semibold uppercase tracking-wide mb-2"
+            style={{ color: "var(--ink-muted)" }}
+          >
+            {item.title}
+          </h4>
+          <p className="tf-display text-2xl font-semibold" style={{ color: ACCENT[item.title] }}>
+            {item.value}
+          </p>
         </div>
       ))}
     </div>
