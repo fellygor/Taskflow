@@ -1,14 +1,18 @@
 import { useState } from "react";
 import TaskForm from "./TaskForm";
-import { Edit2, Trash2, Calendar, Tag, CheckCircle2, Circle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { doc, collection, deleteDoc, getDocs, addDoc, updateDoc } from "firebase/firestore";
+import { Edit2, Trash2, Calendar, Tag, CheckCircle2, Circle, Plus, X } from "lucide-react";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-export default function TaskList({tasks, onAddTask, onDelete, onToggle, setTasks}) {
+const PRIORITY_STYLES = {
+  high: { color: "var(--coral)", bg: "var(--coral-bg)" },
+  medium: { color: "var(--amber)", bg: "var(--amber-bg)" },
+  low: { color: "var(--ink-muted)", bg: "var(--canvas)" },
+};
+
+export default function TaskList({ tasks, onAddTask, onDelete, onToggle, setTasks }) {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const navigate = useNavigate(); 
 
   const handleNewTask = (task) => {
     onAddTask(task); // Updates the parent state
@@ -16,148 +20,190 @@ export default function TaskList({tasks, onAddTask, onDelete, onToggle, setTasks
   };
 
   const handleUpdateTask = async (updatedTask) => {
-      try {
-          const taskRef = doc(db, "tasks", updatedTask.id);
-          await updateDoc(taskRef, updatedTask);
+    try {
+      const taskRef = doc(db, "tasks", updatedTask.id);
+      await updateDoc(taskRef, updatedTask);
 
-          setTasks((prev) =>
-          prev.map((t) =>
-              t.id === updatedTask.id ? updatedTask : t
-          )
-          );
+      setTasks((prev) =>
+        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+      );
 
-          setEditingTask(null); // close modal
-      } 
-      catch (error) {
-          console.error(error);
-      }
+      setEditingTask(null); // close modal
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
-    <div className="bg-surface dark:bg-dark-surface p-5 rounded-xl shadow-lg border border-border-light dark:border-gray-700">
+    <div
+      className="p-5 rounded-xl tf-body"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+    >
       {/* Header */}
-      <div className="flex justify-between mb-4">
-        <h2 className="font-semibold">Tasks</h2>
-        <button 
-          className="bg-blue-500 text-white px-3 py-1 rounded"
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="tf-display text-base font-semibold" style={{ color: "var(--ink)" }}>Tasks</h2>
+          <p className="tf-mono text-[10px] tracking-wide mt-0.5" style={{ color: "var(--ink-muted)" }}>
+            {tasks.length} STRIP{tasks.length === 1 ? "" : "S"} OPEN
+          </p>
+        </div>
+        <button
+          className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          style={{ background: "var(--teal)" }}
           onClick={() => setShowModal(true)}
         >
-          + Add Task
+          <Plus size={15} /> Add Task
         </button>
       </div>
 
       {/* Empty State */}
       {tasks.length === 0 ? (
-        <p className="text-gray-500 text-center py-10">
-          No tasks yet. Start by adding one 🚀
-        </p>
-      ) 
-      : 
-      (
-        <div className="space-y-4">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="group bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-center gap-4 hover:border-blue-200 dark:hover:border-blue-900 transition-all shadow-sm hover:shadow-md"
-            >
-          {/* Custom Checkbox Action */}
-            <button 
-                onClick={() => {
-                    console.log("Toggle clicked for task:", task);
-                    onToggle(task);
+        <div
+          className="text-center py-12 rounded-md"
+          style={{ border: "1px dashed var(--border)" }}
+        >
+          <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
+            No tasks yet. Start by adding one 🚀
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {tasks.map((task) => {
+            const done = task.status === "completed";
+            const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.low;
+
+            return (
+              <div
+                key={task.id}
+                className="group flex items-center gap-4 pl-0 pr-4 py-4 rounded-xl transition-all"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderLeft: `3px solid ${done ? "var(--teal)" : "var(--amber)"}`,
                 }}
-                className={`transition-colors ${task.status === "completed" ? "text-green-500" : "text-gray-300 hover:text-blue-500"}`}
-            >
-                {task.status === "completed" ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-            </button>
+              >
+                {/* Toggle */}
+                <button
+                  onClick={() => onToggle(task)}
+                  className="shrink-0 pl-3 transition-colors"
+                  style={{ color: done ? "var(--teal)" : "var(--ink-muted)" }}
+                  aria-label="Toggle status"
+                >
+                  {done ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+                </button>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className={`font-bold truncate ${task.status === "completed" ? "line-through text-gray-400" : "text-gray-800 dark:text-gray-100"}`}>
-                  {task.title}
-                </h3>
-                {/* Priority Badge */}
-                <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md ${
-                  task.priority === "high" ? "bg-red-100 text-red-600" : 
-                  task.priority === "medium" ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
-                }`}>
-                  {task.priority}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3
+                      className="font-semibold truncate"
+                      style={{
+                        color: done ? "var(--ink-muted)" : "var(--ink)",
+                        textDecoration: done ? "line-through" : "none",
+                      }}
+                    >
+                      {task.title}
+                    </h3>
+                    {task.priority && (
+                      <span
+                        className="tf-mono text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-sm shrink-0"
+                        style={{ color: priority.color, background: priority.bg }}
+                      >
+                        {task.priority}
+                      </span>
+                    )}
+                  </div>
+
+                  {task.description && (
+                    <p
+                      className="text-sm line-clamp-1 mb-2"
+                      style={{ color: "var(--ink-muted)" }}
+                    >
+                      {task.description}
+                    </p>
+                  )}
+
+                  <div className="flex gap-4 items-center text-xs" style={{ color: "var(--ink-muted)" }}>
+                    {task.dueDate && (
+                      <span className="flex items-center gap-1"><Calendar size={13} /> {task.dueDate}</span>
+                    )}
+                    {task.category && (
+                      <span className="flex items-center gap-1"><Tag size={13} /> {task.category}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hover Actions */}
+                <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
+                  <button
+                    onClick={() => setEditingTask(task)}
+                    className="p-2 rounded-lg transition-colors hover:bg-black/5"
+                    style={{ color: "var(--ink-muted)" }}
+                    aria-label="Edit task"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(task.id)}
+                    className="p-2 rounded-lg transition-colors hover:opacity-80"
+                    style={{ color: "var(--coral)", background: "transparent" }}
+                    aria-label="Delete task"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              
-              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mb-2">
-                {task.description}
-              </p>
-
-              <div className="flex gap-4 items-center text-xs text-gray-400">
-                {task.dueDate && (
-                  <span className="flex items-center gap-1"><Calendar size={14} /> {task.dueDate}</span>
-                )}
-                {task.category && (
-                  <span className="flex items-center gap-1"><Tag size={14} /> {task.category}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Hover Actions */}
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => setEditingTask(task)} 
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 transition-colors">
-                <Edit2 size={16} />
-              </button>
-
-              <button 
-                onClick={() => onDelete(task.id)} 
-                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 transition-colors">
-                <Trash2 size={16} />
-              </button>
-
-            </div>
-          </div>
-          ))}
+            );
+          })}
         </div>
       )}
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-          <div className="bg-white dark:bg-gray-800 dark:text-white p-6 rounded-2xl w-full max-w-md shadow-xl animate-scaleIn">
 
-            {/* Close Button */}
+      {/* Add Task modal */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div
+            className="relative p-6 rounded-2xl w-full max-w-md shadow-xl tf-body"
+            style={{ background: "var(--surface)", color: "var(--ink)" }}
+          >
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-2 right-2 text-gray-500"
+              className="absolute top-4 right-4 p-1 rounded hover:bg-black/5"
+              aria-label="Close"
             >
-              ✕
+              <X size={16} style={{ color: "var(--ink-muted)" }} />
             </button>
 
-            <h2 className="text-lg font-bold mb-4">Add Task</h2>
+            <h2 className="tf-display text-lg font-semibold mb-4" style={{ color: "var(--ink)" }}>Add Task</h2>
 
             <TaskForm onAdd={handleNewTask} />
           </div>
         </div>
       )}
-    {editingTask && (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-        <div className="bg-white dark:bg-gray-800 dark:text-white p-6 rounded-2xl w-full max-w-md shadow-xl animate-scaleIn relative">
 
-          {/* Close Button */}
-          <button
-            onClick={() => setEditingTask(null)}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+      {/* Edit Task modal */}
+      {editingTask && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div
+            className="relative p-6 rounded-2xl w-full max-w-md shadow-xl tf-body"
+            style={{ background: "var(--surface)", color: "var(--ink)" }}
           >
-            ✕
-          </button>
+            <button
+              onClick={() => setEditingTask(null)}
+              className="absolute top-4 right-4 p-1 rounded hover:bg-black/5"
+              aria-label="Close"
+            >
+              <X size={16} style={{ color: "var(--ink-muted)" }} />
+            </button>
 
-          <h2 className="text-lg font-bold mb-4">Edit Task</h2>
+            <span className="tf-mono text-[10px] tracking-wide" style={{ color: "var(--ink-muted)" }}>{editingTask.id}</span>
+            <h2 className="tf-display text-lg font-semibold mb-4" style={{ color: "var(--ink)" }}>Edit Task</h2>
 
-          <TaskForm
-            initialData={editingTask}
-            onSubmit={handleUpdateTask}
-            onAdd={undefined} // Explicitly set to undefined to avoid confusion
-          />
+            <TaskForm
+              initialData={editingTask}
+              onSubmit={handleUpdateTask}
+            />
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
-    
   );
 }
