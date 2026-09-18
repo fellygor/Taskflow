@@ -122,6 +122,9 @@ export default function Dashboard() {
                     ) : (
                         <>
                             <StatsCard tasks={tasks} />
+                            <div className="tf-display grid grid-template-columns " style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--ink-muted)" }}>
+
+                            </div>
                             {tasksLoading ? (
                                 <div
                                     className="text-center py-10 rounded-xl tf-mono text-xs tracking-wide"
