@@ -1,6 +1,4 @@
-import { Moon, Sun } from 'lucide-react';
 import { useContext } from 'react';
-import { ThemeContext } from '../context/ThemeContext.jsx';
 
 export default function Navbar({ onMenuClick }) {
 
