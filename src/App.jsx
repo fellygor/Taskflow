@@ -9,7 +9,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path='/auth' element={<AuthScreen />} />
+        <Route path='/' element={<AuthScreen />} />
         <Route 
           path='/dashboard' 
           element={
